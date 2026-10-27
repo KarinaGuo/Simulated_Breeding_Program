@@ -1,0 +1,34 @@
+## Scenario 2
+## Top 1/2 maternal x Random Top 1/2 paternal (F1 and F2)
+
+source("code/scenario_utils.R")
+
+
+target_generations <- 5 
+
+stats_log <- list()
+stats_log <- append_stats(stats_log, calc_summary_stats(original_init_population, original_init_population))
+
+current_pop <- original_init_population
+
+for (gen_num in 1:target_generations) {
+  gen_label <- paste0("F", gen_num)
+  cat(sprintf("Running generation %s...\n", gen_label))
+  
+  top_half_pop <- get_top_fraction(current_pop, 1/2)
+  plan <- random_crossing_plan(top_half_pop, top_half_pop, target_n = 100)
+  
+  next_id <- max(current_pop$indiv_ID) + 1
+  next_pop <- generate_offspring(plan, current_pop, generation = gen_label, next_id_start = next_id)
+  
+  next_pop$GEBV <- Phenotype_from_genotype_GAPIT(next_pop$genotypes, SNPs_tested)
+  next_pop$GEBV <- pmax(pmin(next_pop$GEBV, 1), 0.001)
+  
+  stats_log <- append_stats(stats_log, calc_summary_stats(next_pop, original_init_population))
+  current_pop <- next_pop
+}
+
+stats_df <- stats_to_df(stats_log)
+write.csv(stats_df, "data/scenario_2_stats.csv", row.names = FALSE)
+saveRDS(current_pop, "data/scenario_2_final_pop.rds")
+print(stats_df)
