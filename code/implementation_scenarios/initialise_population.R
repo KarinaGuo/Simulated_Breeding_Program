@@ -1,5 +1,5 @@
 set.seed(12345)
-rm(list = ls())
+#rm(list = ls())
 options(repos = c(CRAN = "https://cran.csiro.au/"))
 
 library(tidyverse)

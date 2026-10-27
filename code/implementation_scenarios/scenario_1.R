@@ -62,7 +62,7 @@ for (gen_num in 1:target_generations) {
 }
 
 stats_df <- stats_to_df(stats_log)
-write.csv(stats_df, "data/scenario_1_stats.csv", row.names = FALSE)
-saveRDS(current_pop, "data/scenario_1_final_pop.rds")
+#write.csv(stats_df, "data/scenario_1_stats.csv", row.names = FALSE)
+#saveRDS(current_pop, "data/scenario_1_final_pop.rds")
 
 print(stats_df)
