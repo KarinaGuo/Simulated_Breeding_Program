@@ -7,7 +7,7 @@ library(tidyverse)
 
 # 1. Load and pool all scenario statistics
 all_stats <- list()
-for (i in 1:7) {
+for (i in 1:8) {
   file_path <- sprintf("data/scenario_%d_stats.csv", i)
   if (file.exists(file_path)) {
     df <- read.csv(file_path)
