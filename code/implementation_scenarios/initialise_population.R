@@ -36,8 +36,17 @@ fixed_maternal_file <- "data/fixed_maternal_genotypes.csv"
 if (file.exists(fixed_maternal_file)) {
   fixed_maternal_df <- read.table(fixed_maternal_file, sep = ",", header = TRUE, check.names = FALSE)
   SNPs_tested <- intersect(SNPs_tested, names(fixed_maternal_df))
-  }  
-  
+}
+
+uploaded_f0_file <- "data/uploaded_F0_genotypes.csv"
+if (file.exists(uploaded_f0_file)) {
+  uploaded_f0_df <- read.csv(uploaded_f0_file, check.names = FALSE)
+  SNPs_tested <- intersect(SNPs_tested, names(uploaded_f0_df))
+} else {
+  uploaded_f0_df <- NULL
+}
+
+
 df_base <- df_base %>%
   filter(rs. %in% SNPs_tested)
 
@@ -97,14 +106,29 @@ allele_freqs <- SNP_AF_Histset$frequency[af_ord]   # ALT allele freq, one per SN
 ## Each individual's genotype at locus l is drawn as Binomial(2, p_l),
 ## where p_l is the ALT allele frequency from SNP_AF.csv.
 ## This links each individual's genotype to the population-level AF baseline.
-init_AF <- replicate(
-  n        = population_size,
-  expr     = rbinom(n    = length(allele_freqs),
-                    size = 2,
-                    prob = allele_freqs),
-  simplify = FALSE
-)
 
+if (!is.null(uploaded_f0_df)) {
+  population_size <- nrow(uploaded_f0_df)
+  indiv_ID <- as.character(uploaded_f0_df$indiv_ID)
+  
+  # Ensure locus order matches the newly intersected SNPs_tested
+  snp_dosages_f0 <- uploaded_f0_df[, SNPs_tested, drop = FALSE]
+  init_AF <- lapply(seq_len(population_size), function(i) as.integer(snp_dosages_f0[i, ]))
+  
+  cat(sprintf("Loaded %d F0 individuals dynamically from uploaded file.\n", population_size))
+} else {
+  # Fallback to standard simulation if no custom F0 population is provided
+  population_size <- 30
+  indiv_ID <- as.character(seq_len(population_size))
+  init_AF <- replicate(
+    n        = population_size,
+    expr     = rbinom(n    = length(allele_freqs),
+                      size = 2,
+                      prob = allele_freqs),
+    simplify = FALSE
+  )
+  cat(sprintf("Simulated %d F0 individuals randomly.\n", population_size))
+}
 ## ── Compute GEBV via GAPIT ────────────────────────────────────────────────────
 ## Phenotype_from_genotype_GAPIT is defined in genotype_phenotype_v1.R.
 ## It uses hapmap_meta, training_hapmap, ref_alleles, alt_alleles, het_codes,
