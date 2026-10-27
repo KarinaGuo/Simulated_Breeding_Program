@@ -26,12 +26,18 @@ SNPs_tested <- SNP_list[, 1]
 indiv_ID <- seq_len(population_size)
 
 ## ── SNP metadata from training hapmap ─────────────────────────────────────────
-df_base <- read.csv(gt_datafile, sep = "\t", header = TRUE) 
+df_base <- read.csv(gt_datafile, sep = "	", header = TRUE) 
 
 SNP_AF_Histset <- read.csv("data/SNP_AF.csv", header = TRUE)
 
 SNPs_tested <- intersect(intersect(SNPs_tested, SNP_AF_Histset$locus), df_base$rs.)
 
+fixed_maternal_file <- "data/fixed_maternal_genotypes.csv"
+if (file.exists(fixed_maternal_file)) {
+  fixed_maternal_df <- read.table(fixed_maternal_file, sep = ",", header = TRUE, check.names = FALSE)
+  SNPs_tested <- intersect(SNPs_tested, names(fixed_maternal_df))
+  }  
+  
 df_base <- df_base %>%
   filter(rs. %in% SNPs_tested)
 
@@ -40,7 +46,7 @@ SNP_AF_Histset <- SNP_AF_Histset %>%
 
 
 #----
-  
+
 hapmap_meta <- df_base[, 1:11]
 
 training_hapmap <- df_base[, c(1, grep("S_", colnames(df_base)))]
@@ -119,16 +125,52 @@ init_err <- rep(0, population_size)
 ##   - calculate_kinship.R uses it to centre the GRM (VanRaden method)
 ##   - Phenotype_from_genotype_GAPIT uses the same locus-level AF when
 ##     constructing simulated hapmaps for subsequent generations
-original_init_population <- list(
-  indiv_ID    = indiv_ID,
-  genotypes   = init_AF,        # list of N dosage vectors (length = n_SNPs)
-  GEBV        = init_GEBV,      # numeric vector [N], rescaled to [0.001, 1]
-  allele_freqs = allele_freqs,  # numeric vector [n_SNPs] — ALT freq from SNP_AF.csv
-  maternal_ID = rep(NA_integer_, population_size),
-  paternal_ID = rep(NA_integer_, population_size),
-  generation  = "F0",
-  error       = init_err
-)
+
+## Load Fixed Maternal Individuals if provided (optional)
+## Expected format: A dataframe/CSV with columns indiv_ID, and SNP dosages (0,1,2) for all SNPs_tested
+fixed_maternal_file <- "data/fixed_maternal_genotypes.csv"
+if (file.exists(fixed_maternal_file)) {
+  n_fixed <- nrow(fixed_maternal_df)
+  
+  # Ensure locus order matches SNPs_tested
+  snp_dosages <- fixed_maternal_df[, SNPs_tested, drop = FALSE]
+  fixed_genotypes <- lapply(seq_len(n_fixed), function(i) as.integer(snp_dosages[i, ]))
+  
+  fixed_indiv_ID <- paste0("FIXED_", fixed_maternal_df$indiv_ID)
+  
+  # Calculate GEBV for fixed maternal individuals
+  fixed_GEBV <- pmax(pmin(Phenotype_from_genotype_GAPIT(fixed_genotypes, SNPs_tested), 1), 0.001)
+  
+  # Combine with random initial population
+  combined_indiv_ID <- as.character(c(indiv_ID, fixed_indiv_ID))
+  combined_AF <- c(init_AF, fixed_genotypes)
+  combined_GEBV <- c(init_GEBV, fixed_GEBV)
+  combined_population_size <- population_size + n_fixed
+  
+  original_init_population <- list(
+    indiv_ID    = combined_indiv_ID,
+    genotypes   = combined_AF,        # list of N dosage vectors (length = n_SNPs)
+    GEBV        = combined_GEBV,      # numeric vector [N], rescaled to [0.001, 1]
+    allele_freqs = allele_freqs,  # numeric vector [n_SNPs] — ALT freq from SNP_AF.csv
+    maternal_ID = rep(NA_character_, combined_population_size),
+    paternal_ID = rep(NA_character_, combined_population_size),
+    generation  = "F0",
+    error       = rep(0, combined_population_size)
+  )
+  cat(sprintf("Loaded %d fixed maternal individuals into the initial population.\n", n_fixed))
+} else {
+  original_init_population <- list(
+    indiv_ID    = as.character(indiv_ID),
+    genotypes   = init_AF,        # list of N dosage vectors (length = n_SNPs)
+    GEBV        = init_GEBV,      # numeric vector [N], rescaled to [0.001, 1]
+    allele_freqs = allele_freqs,  # numeric vector [n_SNPs] — ALT freq from SNP_AF.csv
+    maternal_ID = rep(NA_character_, population_size),
+    paternal_ID = rep(NA_character_, population_size),
+    generation  = "F0",
+    error       = init_err
+  )
+}
+
 
 ## ── Save ──────────────────────────────────────────────────────────────────────
 saveRDS(original_init_population, file = "data/original_init_population.rds")

@@ -1,4 +1,4 @@
-# optimise_grid_placement.R
+## optimise_grid_placement.R
 ##
 ## Grid-based spatial optimisation for the breeding project.
 ## Adapted from Jason Bragg's spatial-genetic distance scripts
@@ -416,10 +416,19 @@ grid_crosses_from_solution <- function(result, pop, target_n = 100) {
 ## @return A new population list in the standard project format
 
 generate_offspring <- function(crossing_plan, pop, generation = "F1",
-                               next_id_start = 1L) {
+                               next_id_start = 1L, scenario_id = NULL) {
+  
+  ## Handle output directory creation for the specific scenario
+  out_dir_path <- "data"
+  if (!is.null(scenario_id)) {
+    out_dir_path <- paste0("data/scenario_", scenario_id)
+    if (!dir.exists(out_dir_path)) {
+      dir.create(out_dir_path, recursive = TRUE)
+    }
+  }
   
   ## Create a tracking log for the crosses
-  cross_log_file <- paste0("data/cross_log_", generation, ".csv")
+  cross_log_file <- file.path(out_dir_path, paste0("cross_log_", generation, ".csv"))
   
   ## We must handle appending if the file exists (to support tracking across scenarios)
   if (file.exists(cross_log_file)) {
@@ -439,14 +448,20 @@ generate_offspring <- function(crossing_plan, pop, generation = "F1",
   paternal_ids   <- integer(0)
   count          <- 0L
   
-  # Tracking individual IDs
+  # Tracking individual IDs along with parental GEBVs
   offspring_id_record <- data.frame(
     Offspring_ID = integer(),
     Maternal_ID = character(),
+    Maternal_GEBV = numeric(),
     Paternal_ID = character(),
+    Paternal_GEBV = numeric(),
     Generation = character(),
     stringsAsFactors = FALSE
   )
+  
+  ## Lookup parental GEBVs
+  parent_gebv <- setNames(pop$GEBV, as.character(pop$indiv_ID))
+  
   
   for (r in seq_len(nrow(crossing_plan))) {
     mat_id  <- as.character(crossing_plan$maternal_ID[r])
@@ -474,7 +489,9 @@ generate_offspring <- function(crossing_plan, pop, generation = "F1",
       offspring_id_record <- rbind(offspring_id_record, data.frame(
         Offspring_ID = current_new_id,
         Maternal_ID = mat_id,
+        Maternal_GEBV = parent_gebv[[mat_id]],
         Paternal_ID = pat_id,
+        Paternal_GEBV = parent_gebv[[pat_id]],
         Generation = generation,
         stringsAsFactors = FALSE
       ))
@@ -485,7 +502,7 @@ generate_offspring <- function(crossing_plan, pop, generation = "F1",
   new_ids      <- seq(next_id_start, length.out = n_offspring)
   
   ## Write out the individual seedling tracking log
-  seedling_log_file <- paste0("data/seedling_parent_log_", generation, ".csv")
+  seedling_log_file <- file.path(out_dir_path, paste0("seedling_parent_log_", generation, ".csv"))
   if (file.exists(seedling_log_file)) {
     write.table(offspring_id_record, seedling_log_file, row.names = FALSE, col.names = FALSE, sep=",", append=TRUE)
   } else {
