@@ -24,7 +24,11 @@ for (gen_num in 1:target_generations) {
     paternal_pop <- current_pop
   }
   
-  plan <- random_crossing_plan(top_third_pop, paternal_pop, target_n = 100)
+  if (gen_num < target_generations) {
+    plan <- random_crossing_plan(top_third_pop, top_third_pop, target_n = 100)
+  } else {
+    plan <- random_crossing_plan(top_third_pop, paternal_pop, target_n = 100)
+  }
   
   if (is_fixed_gen && !is.null(fixed_maternal_pop)) {
     # Combine maternal selection (which now includes the fixed IDs) and the paternal candidates

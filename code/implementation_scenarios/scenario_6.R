@@ -3,7 +3,7 @@
 
 source("code/scenario_utils.R")
 
-starget_generations <- 5 
+target_generations <- 5 
 
 stats_log <- list()
 stats_log <- append_stats(stats_log, calc_summary_stats(original_init_population, original_init_population))
@@ -24,7 +24,11 @@ for (gen_num in 1:target_generations) {
     paternal_pop <- current_pop
   }
   
-  plan <- random_crossing_plan(top_half_pop, paternal_pop, target_n = 100)
+  if (gen_num == target_generations) {
+    plan <- random_crossing_plan(top_half_pop, paternal_pop, target_n = 100)
+  } else {
+    plan <- random_crossing_plan(top_half_pop, top_half_pop, target_n = 100)
+  }
   
   if (is_fixed_gen && !is.null(fixed_maternal_pop)) {
     # Combine maternal selection (which now includes the fixed IDs) and the paternal candidates

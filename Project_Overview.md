@@ -39,6 +39,10 @@
 * 9. If the scenario dictates it, repeat for the number of generations indicated
 
 ## Scenarios
+* Capacity to upload F0 
+* Capacity to fix maternal lines to be used in the final generation - fixing is not integrated into Scenarios 7-8
+* Backcrossing occurs with the whole population of the set generation
+
 ### Scenario 1
 * Subset the top 1/3 of the GEBV from the original_init_population for the initial cross population, this is henceforth called the top_third_population. Select each individual in the top_third_population as the maternal line. For each maternal line, select a paternal line randomly from the top_third_population, with repeats allowed. This produces the F1 population.
 * Generate the summary statistics of the F1 population
@@ -55,7 +59,7 @@
 * Subset the top 1/2 of the GEBV from the original_init_population for the initial cross population. Repeat Scenario 3.
 
 ### Scenario 5-6
-* Repeat Scenario 1-2 but select the paternal line from the initial cross population for F1, and from all F1 offsprings for F2
+* Repeat Scenario 1-2 but select the paternal line from the F1 for the last generation
 
 ### Scenario 7
 * Cross all individuals minimising only relatedness

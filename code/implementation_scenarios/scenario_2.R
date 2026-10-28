@@ -16,13 +16,11 @@ for (gen_num in 1:target_generations) {
   gen_label <- paste0("F", gen_num)
   cat(sprintf("Running generation %s...\n", gen_label))
   
-  is_final_gen <- (gen_num == target_generations)
-  top_half_pop <- get_top_fraction(current_pop, 1/2, force_fixed_maternal = is_final_gen)
+  is_fixed_gen <- (gen_num == 1)
+  top_half_pop <- get_top_fraction(current_pop, 1/2, force_fixed_maternal = is_fixed_gen)
   plan <- random_crossing_plan(top_half_pop, top_half_pop, target_n = 100)
   
-  next_id <- max(current_pop$indiv_ID) + 1
-  
-  if (is_final_gen && !is.null(fixed_maternal_pop)) {
+  if (is_fixed_gen && !is.null(fixed_maternal_pop)) {
     # Combine maternal selection (which now includes the fixed IDs) and the paternal candidates
     var_mat_pop <- top_half_pop
     

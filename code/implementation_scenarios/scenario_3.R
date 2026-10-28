@@ -24,7 +24,6 @@ for (gen_num in 1:target_generations) {
     K_mat <- calc_kinship(current_pop, allele_freqs = original_init_population$allele_freqs)
   }
   
-  
   plan <- greedy_select_paternal(top_third_pop, top_third_pop, K_mat, gebv_weight = 0.5, target_n = 100)
   
   if (is_fixed_gen && !is.null(fixed_maternal_pop)) {
